@@ -81,10 +81,9 @@ const QUESTIONS = [
 
 // Question types, read from where each question comes from.
 const TYPES = [
-  { id: 'all', name: 'All types', short: 'All types' },
-  { id: 'ex', name: 'Examples', short: 'Examples' },
-  { id: 'hw', name: 'Homework', short: 'Homework' },
-  { id: 'rec', name: 'Recitation', short: 'Recitation' }
+  { id: 'ex', name: 'Examples', short: 'Ex' },
+  { id: 'hw', name: 'Homework', short: 'HW' },
+  { id: 'rec', name: 'Recitation', short: 'Rec' }
 ];
 QUESTIONS.forEach((q) => {
   q.type = /^Example/.test(q.src) ? 'ex' : /^HW/.test(q.src) ? 'hw' : 'rec';

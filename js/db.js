@@ -6,7 +6,7 @@
 //   attempts: [ { id, q: '4.12', at: ISO date, result: 0-3, diff: 1-4 | null, note } ],
 //   tags:     { '4.12': { quality: 'beautiful' | 'nice' | 'ok' | 'ugly' | 'disgusting' | null, exam: 0-4 | null } },
 //   prefs:    { mapMode: 'diff' | 'result' | 'exam', lastCh: 4, theme: 'auto' | 'light' | 'paper' | 'forest' | 'night',
-//               type: 'all' | 'ex' | 'hw' | 'rec' }
+//               types: [] (all) or any of 'ex', 'hw', 'rec' }
 // }
 //
 // result: 0 Solved correctly, 1 Made a mistake, 2 Stuck, 3 Couldn't solve
@@ -22,7 +22,7 @@ const DB = {
   data: null,
 
   empty() {
-    return { v: DB_VERSION, attempts: [], tags: {}, prefs: { mapMode: 'diff', lastCh: 4, theme: 'auto', type: 'all' } };
+    return { v: DB_VERSION, attempts: [], tags: {}, prefs: { mapMode: 'diff', lastCh: 4, theme: 'auto', types: [] } };
   },
 
   load() {
@@ -41,6 +41,9 @@ const DB = {
     d.tags = d.tags && typeof d.tags === 'object' ? d.tags : {};
     d.prefs = Object.assign(base.prefs, d.prefs || {});
     // v1 → v2: three-step rating became five steps; 'normal' maps to 'ok'.
+    // qt-v3 kept one type as a string; now it is a list.
+    if (typeof d.prefs.type === 'string') { d.prefs.types = d.prefs.type === 'all' ? [] : [d.prefs.type]; delete d.prefs.type; }
+    if (!Array.isArray(d.prefs.types)) d.prefs.types = [];
     Object.values(d.tags).forEach((t) => { if (t && t.quality === 'normal') t.quality = 'ok'; });
     d.v = DB_VERSION;
     return d;

@@ -97,7 +97,7 @@ h2 { margin: 0; font-size: 22px; font-weight: 650; letter-spacing: -0.015em; lin
 /* ---------- Layout ---------- */
 .screen { max-width: 560px; margin: 0 auto; padding-bottom: calc(92px + env(safe-area-inset-bottom)); }
 .top { padding: 22px 20px 10px; display: flex; flex-direction: column; gap: 6px; background: var(--bg); }
-.top.sticky { position: sticky; top: 0; z-index: 2; gap: 12px; padding-bottom: 12px; }
+.top.sticky { position: sticky; top: 0; z-index: 6; gap: 12px; padding-bottom: 12px; }
 .pad { padding: 10px 20px 0; }
 .list-gap { display: flex; flex-direction: column; gap: 10px; }
 .list-gap.tight { gap: 7px; padding: 0 14px; }
@@ -254,8 +254,22 @@ h2 { margin: 0; font-size: 22px; font-weight: 650; letter-spacing: -0.015em; lin
   font-size: 13px; font-weight: 600; flex-shrink: 0; white-space: nowrap;
 }
 .typepick.on { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
-.typepick select { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; font-size: 16px; cursor: pointer; }
-.typepick:focus-within { outline: 2.5px solid var(--accent); outline-offset: 2px; }
+.typewrap { position: relative; display: inline-flex; flex-shrink: 0; }
+.typemenu {
+  position: absolute; top: calc(100% + 6px); z-index: 30; width: 236px; padding: 6px;
+  background: var(--surface); border: 1px solid var(--line); border-radius: 16px;
+  box-shadow: 0 12px 32px rgba(0,0,0,.18); display: flex; flex-direction: column; animation: fade .12s ease-out;
+}
+.typemenu.right { right: 0; } .typemenu.left { left: 0; }
+.typeopt { display: flex; align-items: center; gap: 12px; min-height: 48px; padding: 0 10px; border-radius: 11px; font-size: 15px; font-weight: 550; color: var(--ink); cursor: pointer; }
+.typeopt:active { background: var(--surface2); }
+.typeopt input { position: absolute; opacity: 0; pointer-events: none; }
+.typeopt .box { width: 22px; height: 22px; border-radius: 7px; border: 2px solid var(--line2); display: flex; align-items: center; justify-content: center; flex-shrink: 0; color: var(--on-accent); }
+.typeopt input:checked + .box { background: var(--accent); border-color: var(--accent); }
+.typeopt input:focus-visible + .box { outline: 2.5px solid var(--accent); outline-offset: 2px; }
+.typeopt .grow { flex: 1; }
+.typeall { border-top: 1px solid var(--line); margin-top: 4px; padding: 12px 10px 8px; text-align: left; font-size: 14px; }
+.typeall:disabled { color: var(--muted); cursor: default; }
 .tile.off { opacity: .16; }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 

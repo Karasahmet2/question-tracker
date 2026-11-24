@@ -18,6 +18,7 @@ const ICONS = {
   gear: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>',
   arrow: '<path d="M5 12h14M13 6l6 6-6 6"/>',
   down: '<path d="M6 9l6 6 6-6"/>',
+  check: '<path d="M5 12.5l4.5 4.5L19 7.5"/>',
   book: '<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V3H6.5A2.5 2.5 0 0 0 4 5.5z"/><path d="M4 19.5A2.5 2.5 0 0 0 6.5 22H20v-5"/>'
 };
 const icon = (name, size) => `<svg width="${size || 22}" height="${size || 22}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[name]}</svg>`;
@@ -27,7 +28,15 @@ const icon = (name, size) => `<svg width="${size || 22}" height="${size || 22}" 
 const app = $('#app');
 let skip = 0; // how many "Up next" picks were skipped on Home
 
-function route() {
+// Draw the current screen again in place (same scroll position), e.g. after the type menu changes.
+function rerender() {
+  const y = window.scrollY;
+  route(true);
+  window.scrollTo(0, y);
+}
+
+function route(keepScroll) {
+  if (!keepScroll) typeMenuOpen = false;
   const h = location.hash.replace(/^#\/?/, '');
   const [page, arg] = h.split('/');
   if (page === 'q' && byId[arg]) return renderSheet(byId[arg]);
@@ -36,7 +45,7 @@ function route() {
   else if (page === 'map') renderMap();
   else if (page === 'settings') renderSettings();
   else renderHome();
-  window.scrollTo(0, 0);
+  if (!keepScroll) window.scrollTo(0, 0);
 }
 
 function go(hash) { location.hash = hash; }
@@ -48,21 +57,55 @@ function nav(active) {
 
 // ---------- Home ----------
 
-// The type button (All types / Examples / Homework / Recitation). One choice for every screen;
-// it turns coloured while a type is picked, so a filtered screen is never mistaken for all 70.
-function typePick() {
+// The type menu: tick Examples, Homework and/or Recitation. One choice for every screen.
+// The button turns the theme colour while not all types are shown, so a filtered screen
+// is never mistaken for all 70.
+let typeMenuOpen = false;
+
+function typeLabel() {
   const t = typeFilter();
-  const opts = TYPES.map((x) => {
-    const n = x.id === 'all' ? QUESTIONS.length : QUESTIONS.filter((q) => q.type === x.id).length;
-    return `<option value="${x.id}"${x.id === t ? ' selected' : ''}>${x.name} (${n})</option>`;
-  }).join('');
-  return `<label class="typepick${t !== 'all' ? ' on' : ''}"><span>${TYPES.find((x) => x.id === t).short}</span>${icon('down', 16)}<select class="typeselect" aria-label="Question type">${opts}</select></label>`;
+  if (!t.length) return 'All types';
+  if (t.length === 1) return TYPES.find((x) => x.id === t[0]).name;
+  return TYPES.filter((x) => t.includes(x.id)).map((x) => x.short).join(' + ');
 }
-app.addEventListener('change', (e) => {
-  if (!e.target.classList.contains('typeselect')) return;
-  DB.setPref('type', e.target.value);
+
+function typePick(side) {
+  const t = typeFilter();
+  const rows = TYPES.map((x) => {
+    const n = QUESTIONS.filter((q) => q.type === x.id).length;
+    const on = t.includes(x.id);
+    return `<label class="typeopt"><input type="checkbox" data-type="${x.id}"${on ? ' checked' : ''}><span class="box" aria-hidden="true">${on ? icon('check', 14) : ''}</span><span class="grow">${x.name}</span><span class="muted num">${n}</span></label>`;
+  }).join('');
+  const menu = typeMenuOpen ? `<div class="typemenu ${side || 'right'}" id="typemenu" role="group" aria-label="Question types">
+      ${rows}<button class="linkbtn typeall" data-type-all${t.length ? '' : ' disabled'}>Show all types</button></div>` : '';
+  return `<span class="typewrap"><button class="typepick${t.length ? ' on' : ''}" aria-expanded="${typeMenuOpen}" aria-controls="typemenu" data-type-btn>${typeLabel()}${icon('down', 16)}</button>${menu}</span>`;
+}
+
+function setTypes(list) {
+  // All three ticked is the same as all types.
+  DB.setPref('types', list.length === TYPES.length ? [] : list);
   skip = 0;
-  route();
+  rerender();
+}
+
+app.addEventListener('click', (e) => {
+  const btn = e.target.closest('[data-type-btn]');
+  if (btn) { typeMenuOpen = !typeMenuOpen; rerender(); return; }
+  if (e.target.closest('[data-type-all]')) { setTypes([]); return; }
+});
+app.addEventListener('change', (e) => {
+  const id = e.target.dataset && e.target.dataset.type;
+  if (!id) return;
+  const t = typeFilter().length ? typeFilter().slice() : [];
+  const next = e.target.checked ? [...t, id] : t.filter((x) => x !== id);
+  setTypes(TYPES.map((x) => x.id).filter((x) => next.includes(x)));
+});
+// Tap anywhere else, or press Escape, to close the menu.
+document.addEventListener('click', (e) => {
+  if (typeMenuOpen && !e.target.closest('.typewrap')) { typeMenuOpen = false; rerender(); }
+});
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && typeMenuOpen) { typeMenuOpen = false; rerender(); const b = $('[data-type-btn]'); if (b) b.focus(); }
 });
 
 // Small text bits shared by the screens.
@@ -159,7 +202,7 @@ function renderChapter(ch) {
   const c = chapterOf(ch) || CHAPTERS[0];
   DB.setPref('lastCh', c.ch);
   const all = scoped().filter((q) => q.ch === c.ch).map((q) => stateOf(q));
-  const typeName = typeFilter() === 'all' ? 'questions' : TYPES.find((x) => x.id === typeFilter()).name.toLowerCase();
+  const typeName = typeFilter().length === 1 ? TYPES.find((x) => x.id === typeFilter()[0]).name.toLowerCase() : 'questions';
   const keep = (FILTERS.find((f) => f[0] === listFilter) || FILTERS[0])[2];
   let rows = all.filter(keep);
   if (listSort === 'next') rows.sort((a, b) => priority(b) - priority(a));
@@ -187,7 +230,7 @@ function renderChapter(ch) {
         <span class="small muted">${all.length} ${typeName} · ${all.filter((s) => s.solved).length} solved</span></div>
         <div class="segs">${chTabs}</div></div>
       <div class="chips">${chips}</div>
-      <div class="row small">${typePick()}<span class="row tools"><span class="muted">Showing ${rows.length}</span>
+      <div class="row small">${typePick('left')}<span class="row tools"><span class="muted">Showing ${rows.length}</span>
         <button class="linkbtn" id="sort">Sort: ${listSort === 'next' ? 'Up next' : 'Number'}</button></span></div>
     </header>
     <section class="pad list-gap tight">${list}</section>
@@ -346,7 +389,7 @@ function renderMap() {
 
   app.innerHTML = `<main class="screen">
     <header class="top"><span class="eyebrow">Map</span><h1 class="h2">All ${QUESTIONS.length} at a glance</h1>
-      <div class="row"><span class="small muted">${typeFilter() === 'all' ? 'Tap a tile to open it.' : 'Other types are faded.'}</span>${typePick()}</div>
+      <div class="row"><span class="small muted">${typeFilter().length ? 'Other types are faded.' : 'Tap a tile to open it.'}</span>${typePick()}</div>
       <div class="segbar" role="group" aria-label="Colour by">${modes}</div></header>
     <section class="pad map">${chapters}
       <div class="card legend"><div class="lrow">${legend}</div><div class="lrow sep">${marks}</div></div>

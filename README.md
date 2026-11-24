@@ -17,13 +17,16 @@ and keeps your ratings on the phone.
 ## Question types
 
 Each question is an **Example**, **Homework** or **Recitation** question (35 / 19 / 16), read from its source in the guide.
-The type button — top right on Home, next to Sort in the list, beside the subtitle on the map — picks one type for all screens at once:
+The type button — top right on Home, next to Sort in the list, beside the subtitle on the map — opens a small menu
+where you tick any combination. The choice applies to all screens at once:
 
-- **Home** counts, stats, chapter cards and Up next use only that type.
-- **The list** shows only that type, and the chip filters work on top of it.
+- **Home** counts, stats, chapter cards and Up next use only the ticked types.
+- **The list** shows only those types, and the chip filters work on top of them.
 - **The map** keeps all 70 tiles in place and fades the other types, so the layout never jumps.
 
-The button turns the theme colour while a type is picked, and the choice is remembered. List rows show a short source such as “Ex 4-1”, “HW5 Q1” or “Rec 4 · P4.18”.
+The button reads *All types*, one name (*Homework*) or a short mix (*Ex + Rec*), and turns the theme colour while
+anything is left out. Ticking all three is the same as *Show all types*. Tap outside the menu or press Escape to close it.
+The choice is remembered. List rows show a short source such as “Ex 4-1”, “HW5 Q1” or “Rec 4 · P4.18”.
 
 ## What gets saved
 
@@ -70,17 +73,18 @@ works without them. Every question still shows its page number.
 | `sw.js` | Offline files; change `VERSION` with every update |
 | `tests/t01_main_flows.py` | Main flows (28 checks) |
 | `tests/t02_ratings_and_themes.py` | Update 2: new ratings, old data carried over, themes (24 checks) |
-| `tests/t03_question_types.py` | Update 3: type button on every screen, narrow phones (25 checks) |
+| `tests/t03_question_types.py` | Updates 3–4: type menu on every screen, two types at once, narrow phones (39 checks) |
 
 ## Updates
 
 | Version | What it brought |
 |---|---|
+| qt-v4 | Type menu with checkboxes: pick two (or any) types at once. A single type saved by v3 carries over. |
 | qt-v3 | Type button: Examples, Homework, Recitation on Home, list and map. Short sources on list rows. |
 | qt-v2 | Five-step question rating (Beautiful … Disgusting), exam names D-Yes … D-No, new look, themes. Saved “Normal” ratings become “OK”. |
 | qt-v1 | First version |
 
 ## Updating
 
-Change `VERSION` in `sw.js` and `APP_VERSION` in `index.html` together (`qt-v4`, …) so phones pick up the new files.
+Change `VERSION` in `sw.js` and `APP_VERSION` in `index.html` together (`qt-v5`, …) so phones pick up the new files.
 Run the tests with `python3 tests/t01_main_flows.py` `python3 tests/t02_ratings_and_themes.py` and `python3 tests/t03_question_types.py` (needs Python Playwright and Chrome).
