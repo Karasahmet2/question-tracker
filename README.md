@@ -74,11 +74,13 @@ works without them. Every question still shows its page number.
 | `tests/t01_main_flows.py` | Main flows (28 checks) |
 | `tests/t02_ratings_and_themes.py` | Update 2: new ratings, old data carried over, themes (24 checks) |
 | `tests/t03_question_types.py` | Updates 3–4: type menu on every screen, two types at once, narrow phones (39 checks) |
+| `tests/t04_updates.py` | Update 5: a new upload shows on the first open, data kept, still offline (8 checks) |
 
 ## Updates
 
 | Version | What it brought |
 |---|---|
+| qt-v5 | Updates now show the first time the app opens after an upload, with an “Updated” notice. Fixes stale files being stored from the browser’s short-term cache. |
 | qt-v4 | Type menu with checkboxes: pick two (or any) types at once. A single type saved by v3 carries over. |
 | qt-v3 | Type button: Examples, Homework, Recitation on Home, list and map. Short sources on list rows. |
 | qt-v2 | Five-step question rating (Beautiful … Disgusting), exam names D-Yes … D-No, new look, themes. Saved “Normal” ratings become “OK”. |
@@ -86,5 +88,17 @@ works without them. Every question still shows its page number.
 
 ## Updating
 
-Change `VERSION` in `sw.js` and `APP_VERSION` in `index.html` together (`qt-v5`, …) so phones pick up the new files.
-Run the tests with `python3 tests/t01_main_flows.py` `python3 tests/t02_ratings_and_themes.py` and `python3 tests/t03_question_types.py` (needs Python Playwright and Chrome).
+1. Change `VERSION` in `sw.js` and `APP_VERSION` in `index.html` together (`qt-v6`, …).
+2. Upload the changed files to the repository and wait for GitHub Pages to publish (usually 1–2 minutes;
+   the repository's **Actions** tab shows a green tick when it's live).
+3. Open the app. It finds the new version, reloads once by itself and shows **“Updated to qt-v…”**.
+   If the app was already open in the background, bringing it to the front does the same.
+
+**Which version am I on?** Settings → bottom line, e.g. *Question Tracker · qt-v5*.
+
+**Still on the old version?** Close the app fully (swipe it away from recent apps) and open it again.
+Updates from **qt-v4 or older to qt-v5** may need this once, because those versions didn't know how to switch
+over by themselves; from qt-v5 on it happens automatically.
+
+Run the tests with `python3 tests/t01_main_flows.py`, `t02_ratings_and_themes.py`, `t03_question_types.py`
+and `t04_updates.py` (needs Python Playwright and Chrome).

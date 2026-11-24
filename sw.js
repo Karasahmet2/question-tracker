@@ -1,5 +1,5 @@
 // Keeps the app working offline. Change VERSION with every update so phones fetch the new files.
-const VERSION = 'qt-v4';
+const VERSION = 'qt-v5';
 const FILES = [
   './', 'index.html', 'manifest.webmanifest', 'css/style.css',
   'js/questions.js', 'js/db.js', 'js/logic.js', 'js/app.js',
@@ -8,8 +8,12 @@ const FILES = [
   'fonts/bricolage-grotesque-latin-wght-normal.woff2', 'fonts/bricolage-grotesque-latin-ext-wght-normal.woff2'
 ];
 
+// cache: 'reload' skips the browser's own short-term copies (GitHub Pages lets browsers keep
+// files for 10 minutes), so a new version always stores the new files, never stale ones.
 self.addEventListener('install', (e) => {
-  e.waitUntil(caches.open(VERSION).then((c) => c.addAll(FILES)).then(() => self.skipWaiting()));
+  e.waitUntil(caches.open(VERSION)
+    .then((c) => c.addAll(FILES.map((f) => new Request(f, { cache: 'reload' }))))
+    .then(() => self.skipWaiting()));
 });
 
 self.addEventListener('activate', (e) => {

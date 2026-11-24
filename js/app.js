@@ -480,4 +480,24 @@ applyTheme();
 if (navigator.storage && navigator.storage.persist) navigator.storage.persist();
 window.addEventListener('hashchange', () => { movedInApp = true; route(); });
 route();
-if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('sw.js');
+// Offline files and updates. When a new version is uploaded, the app notices it the next time it
+// opens (or comes back to the front), switches over and reloads once, then says it was updated.
+if ('serviceWorker' in navigator && location.protocol !== 'file:') {
+  const hadWorker = !!navigator.serviceWorker.controller;
+  let reloading = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (!hadWorker || reloading) return; // first install: nothing old on screen
+    reloading = true;
+    try { sessionStorage.setItem('qt-updated', '1'); } catch (e) { /* not important */ }
+    location.reload();
+  });
+  navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).then((reg) => {
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) reg.update(); });
+  });
+  try {
+    if (sessionStorage.getItem('qt-updated')) {
+      sessionStorage.removeItem('qt-updated');
+      toast('Updated to ' + APP_VERSION);
+    }
+  } catch (e) { /* not important */ }
+}
