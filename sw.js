@@ -1,5 +1,5 @@
 // Keeps the app working offline. Change VERSION with every update so phones fetch the new files.
-const VERSION = 'qt-v2';
+const VERSION = 'qt-v3';
 const FILES = [
   './', 'index.html', 'manifest.webmanifest', 'css/style.css',
   'js/questions.js', 'js/db.js', 'js/logic.js', 'js/app.js',

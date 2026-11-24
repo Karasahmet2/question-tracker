@@ -5,7 +5,8 @@
 //   v: 1,
 //   attempts: [ { id, q: '4.12', at: ISO date, result: 0-3, diff: 1-4 | null, note } ],
 //   tags:     { '4.12': { quality: 'beautiful' | 'nice' | 'ok' | 'ugly' | 'disgusting' | null, exam: 0-4 | null } },
-//   prefs:    { mapMode: 'diff' | 'result' | 'exam', lastCh: 4, theme: 'auto' | 'light' | 'paper' | 'forest' | 'night' }
+//   prefs:    { mapMode: 'diff' | 'result' | 'exam', lastCh: 4, theme: 'auto' | 'light' | 'paper' | 'forest' | 'night',
+//               type: 'all' | 'ex' | 'hw' | 'rec' }
 // }
 //
 // result: 0 Solved correctly, 1 Made a mistake, 2 Stuck, 3 Couldn't solve
@@ -21,7 +22,7 @@ const DB = {
   data: null,
 
   empty() {
-    return { v: DB_VERSION, attempts: [], tags: {}, prefs: { mapMode: 'diff', lastCh: 4, theme: 'auto' } };
+    return { v: DB_VERSION, attempts: [], tags: {}, prefs: { mapMode: 'diff', lastCh: 4, theme: 'auto', type: 'all' } };
   },
 
   load() {

@@ -74,8 +74,13 @@ function whyText(s) {
   return 'Picked because ' + t.replace(/, ([^,]*)$/, ' and $1') + '.';
 }
 
+// The question type picked with the type button ('all', 'ex', 'hw', 'rec'). Applies to every screen.
+function typeFilter() { return DB.data.prefs.type || 'all'; }
+function inType(q) { const t = typeFilter(); return t === 'all' || q.type === t; }
+function scoped() { return QUESTIONS.filter(inType); }
+
 function rankedQueue(now) {
-  return QUESTIONS.map((q) => stateOf(q, now))
+  return scoped().map((q) => stateOf(q, now))
     .sort((a, b) => priority(b, now) - priority(a, now) || a.q.id.localeCompare(b.q.id));
 }
 

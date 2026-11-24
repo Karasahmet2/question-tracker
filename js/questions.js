@@ -78,3 +78,20 @@ const QUESTIONS = [
   {"id": "6.15", "ch": 6, "src": "HW5 Q11 (Problem 6.28)", "title": "Field in free space, cylindrical", "page": 23},
   {"id": "6.16", "ch": 6, "src": "Recitation 4, Problem 6.27", "title": "H → E, Jd, ρv", "page": 24},
 ];
+
+// Question types, read from where each question comes from.
+const TYPES = [
+  { id: 'all', name: 'All types', short: 'All types' },
+  { id: 'ex', name: 'Examples', short: 'Examples' },
+  { id: 'hw', name: 'Homework', short: 'Homework' },
+  { id: 'rec', name: 'Recitation', short: 'Recitation' }
+];
+QUESTIONS.forEach((q) => {
+  q.type = /^Example/.test(q.src) ? 'ex' : /^HW/.test(q.src) ? 'hw' : 'rec';
+  // A short source for the list: "Ex 4-1", "HW5 Q1", "Rec 4 · P4.18".
+  q.short = q.src
+    .replace(/^Example /, 'Ex ')
+    .replace(/^Recitations? ([\d &]+), Problem (.+)$/, 'Rec $1 · P$2')
+    .replace(/^Recitation (\d+)$/, 'Rec $1')
+    .replace(/ \(Problem [^)]+\)$/, '');
+});

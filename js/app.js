@@ -17,6 +17,7 @@ const ICONS = {
   back: '<path d="M15 6l-6 6 6 6"/>',
   gear: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>',
   arrow: '<path d="M5 12h14M13 6l6 6-6 6"/>',
+  down: '<path d="M6 9l6 6 6-6"/>',
   book: '<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V3H6.5A2.5 2.5 0 0 0 4 5.5z"/><path d="M4 19.5A2.5 2.5 0 0 0 6.5 22H20v-5"/>'
 };
 const icon = (name, size) => `<svg width="${size || 22}" height="${size || 22}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[name]}</svg>`;
@@ -47,6 +48,23 @@ function nav(active) {
 
 // ---------- Home ----------
 
+// The type button (All types / Examples / Homework / Recitation). One choice for every screen;
+// it turns coloured while a type is picked, so a filtered screen is never mistaken for all 70.
+function typePick() {
+  const t = typeFilter();
+  const opts = TYPES.map((x) => {
+    const n = x.id === 'all' ? QUESTIONS.length : QUESTIONS.filter((q) => q.type === x.id).length;
+    return `<option value="${x.id}"${x.id === t ? ' selected' : ''}>${x.name} (${n})</option>`;
+  }).join('');
+  return `<label class="typepick${t !== 'all' ? ' on' : ''}"><span>${TYPES.find((x) => x.id === t).short}</span>${icon('down', 16)}<select class="typeselect" aria-label="Question type">${opts}</select></label>`;
+}
+app.addEventListener('change', (e) => {
+  if (!e.target.classList.contains('typeselect')) return;
+  DB.setPref('type', e.target.value);
+  skip = 0;
+  route();
+});
+
 // Small text bits shared by the screens.
 const examPill = (e, short) => e === null || e === undefined ? '' :
   `<span class="pill x${e + 1}">${LABELS.exam[e]}</span>`;
@@ -54,13 +72,14 @@ const qualityText = (q) => !q || q === 'ok' ? '' :
   `<span class="${isLoved(q) ? 'accent' : 'warm'}">${LABELS.quality[q]}</span>`;
 
 function renderHome() {
-  const all = QUESTIONS.map((q) => stateOf(q));
+  const all = scoped().map((q) => stateOf(q));
+  const N = all.length;
   const solved = all.filter((s) => s.solved).length;
   const twice = all.filter((s) => s.attempts.filter((a) => a.result <= 1).length >= 2).length;
   const queue = rankedQueue();
   const next = queue[skip % queue.length];
   const dueCount = all.filter((s) => s.due).length;
-  const tries = DB.data.attempts.length;
+  const tries = all.reduce((n, s) => n + s.tries, 0);
 
   const facts = [
     next.diff ? LABELS.diff[next.diff] : 'Not rated yet',
@@ -72,6 +91,7 @@ function renderHome() {
   const chapters = CHAPTERS.map((c) => {
     const ss = all.filter((s) => s.q.ch === c.ch);
     const done = ss.filter((s) => s.solved).length;
+    if (!ss.length) return '';
     const examTodo = ss.filter((s) => !s.solved && (s.tags.exam === 0 || s.tags.exam === 1)).length;
     const due = ss.filter((s) => s.due).length;
     const sub = examTodo ? `<span class="warm">${examTodo} on the exam, not solved</span> · ${due} due` : `${due} due`;
@@ -87,9 +107,9 @@ function renderHome() {
   app.innerHTML = `<main class="screen">
     <header class="top">
       <div class="row"><span class="eyebrow">EM Midterm 2</span>
-        <a href="#/settings" class="iconbtn" aria-label="Settings and themes">${icon('gear', 20)}</a></div>
-      <div class="row base"><h1><span class="num">${solved}</span> of ${QUESTIONS.length} solved</h1><span class="muted num">${Math.round(solved / QUESTIONS.length * 100)}%</span></div>
-      <div class="bar two" aria-hidden="true"><div style="width:${twice / QUESTIONS.length * 100}%"></div><div class="lite" style="width:${(solved - twice) / QUESTIONS.length * 100}%"></div></div>
+        <span class="row tools">${typePick()}<a href="#/settings" class="iconbtn" aria-label="Settings and themes">${icon('gear', 20)}</a></span></div>
+      <div class="row base"><h1><span class="num">${solved}</span> of ${N} solved</h1><span class="muted num">${Math.round(solved / N * 100)}%</span></div>
+      <div class="bar two" aria-hidden="true"><div style="width:${twice / N * 100}%"></div><div class="lite" style="width:${(solved - twice) / N * 100}%"></div></div>
       <div class="stats">
         <div class="stat"><b class="num">${dueCount}</b><span>due now</span></div>
         <div class="stat"><b class="num">${twice}</b><span>solved twice +</span></div>
@@ -138,7 +158,8 @@ function pips(d) {
 function renderChapter(ch) {
   const c = chapterOf(ch) || CHAPTERS[0];
   DB.setPref('lastCh', c.ch);
-  const all = QUESTIONS.filter((q) => q.ch === c.ch).map((q) => stateOf(q));
+  const all = scoped().filter((q) => q.ch === c.ch).map((q) => stateOf(q));
+  const typeName = typeFilter() === 'all' ? 'questions' : TYPES.find((x) => x.id === typeFilter()).name.toLowerCase();
   const keep = (FILTERS.find((f) => f[0] === listFilter) || FILTERS[0])[2];
   let rows = all.filter(keep);
   if (listSort === 'next') rows.sort((a, b) => priority(b) - priority(a));
@@ -150,24 +171,24 @@ function renderChapter(ch) {
     let meta;
     if (s.tries) {
       const r = s.result >= 1 ? `<span class="warm">${LABELS.result[s.result]}</span>` : '';
-      meta = `${s.diff ? pips(s.diff) + '<span>' + LABELS.diff[s.diff] + '</span>' : ''}<span class="num">×${s.tries}</span>${r}${qualityText(s.tags.quality)}`;
+      meta = `<span>${esc(s.q.short)}</span>${s.diff ? pips(s.diff) + '<span class="sr-only">' + LABELS.diff[s.diff] + '</span>' : ''}<span class="num">×${s.tries}</span>${r}${qualityText(s.tags.quality)}`;
     } else {
-      meta = '<span>Not tried yet</span>' + qualityText(s.tags.quality);
+      meta = `<span>${esc(s.q.short)}</span><span>Not tried yet</span>` + qualityText(s.tags.quality);
     }
     const exam = s.tags.exam === 0 || s.tags.exam === 1 ? examPill(s.tags.exam) : '';
     return `<a class="card qrow" href="#/q/${s.q.id}">
       <span class="qn d${s.diff}">${s.q.id.slice(2)}</span>
       <span class="qbody"><span class="qt">${esc(s.q.title)}</span><span class="qmeta">${meta}</span></span>${exam}</a>`;
-  }).join('') || '<p class="empty">Nothing here with this filter.</p>';
+  }).join('') || '<p class="empty">Nothing here with these filters.</p>';
 
   app.innerHTML = `<main class="screen">
     <header class="top sticky">
-      <div class="row"><div><span class="eyebrow">Chapter ${c.ch}</span><h1 class="h2">${c.name}</h1>
-        <span class="small muted">${all.length} questions · ${all.filter((s) => s.solved).length} solved</span></div>
+      <div class="row titlerow"><div><span class="eyebrow">Chapter ${c.ch}</span><h1 class="h2">${c.name}</h1>
+        <span class="small muted">${all.length} ${typeName} · ${all.filter((s) => s.solved).length} solved</span></div>
         <div class="segs">${chTabs}</div></div>
       <div class="chips">${chips}</div>
-      <div class="row small"><span class="muted">Showing ${rows.length}</span>
-        <button class="linkbtn" id="sort">Sort: ${listSort === 'next' ? 'Up next' : 'Number'}</button></div>
+      <div class="row small">${typePick()}<span class="row tools"><span class="muted">Showing ${rows.length}</span>
+        <button class="linkbtn" id="sort">Sort: ${listSort === 'next' ? 'Up next' : 'Number'}</button></span></div>
     </header>
     <section class="pad list-gap tight">${list}</section>
   </main>${nav('list')}`;
@@ -313,9 +334,9 @@ function renderMap() {
       const ql = s.tags.quality;
       const qm = { beautiful: '<i class="star">✦</i>', nice: '<i class="star open">✧</i>', ugly: '<i class="slash"></i>', disgusting: '<i class="cross"></i>' }[ql] || '';
       const aria = `Question ${s.q.id}, ${valueName}${ql && ql !== 'ok' ? ', ' + ql : ''}${mode !== 'exam' && (s.tags.exam === 0 || s.tags.exam === 1) ? ', ' + LABELS.exam[s.tags.exam] : ''}`;
-      return `<a class="tile ${k}" href="#/q/${s.q.id}" aria-label="${aria}">${s.q.id.slice(2)}${dot}${qm}</a>`;
+      return `<a class="tile ${k}${inType(s.q) ? '' : ' off'}" href="#/q/${s.q.id}" aria-label="${aria}">${s.q.id.slice(2)}${dot}${qm}</a>`;
     }).join('');
-    return `<div class="mapch"><div class="row small"><b>${c.ch} · ${c.name}</b><span class="muted">${ss.filter((s) => s.solved).length} / ${ss.length} solved</span></div><div class="tiles">${tiles}</div></div>`;
+    return `<div class="mapch"><div class="row small"><b>${c.ch} · ${c.name}</b><span class="muted">${ss.filter((s) => s.solved && inType(s.q)).length} / ${ss.filter((s) => inType(s.q)).length} solved</span></div><div class="tiles">${tiles}</div></div>`;
   }).join('');
 
   const prefix = mode[0];
@@ -325,7 +346,7 @@ function renderMap() {
 
   app.innerHTML = `<main class="screen">
     <header class="top"><span class="eyebrow">Map</span><h1 class="h2">All ${QUESTIONS.length} at a glance</h1>
-      <span class="small muted">Tap a tile to open it.</span>
+      <div class="row"><span class="small muted">${typeFilter() === 'all' ? 'Tap a tile to open it.' : 'Other types are faded.'}</span>${typePick()}</div>
       <div class="segbar" role="group" aria-label="Colour by">${modes}</div></header>
     <section class="pad map">${chapters}
       <div class="card legend"><div class="lrow">${legend}</div><div class="lrow sep">${marks}</div></div>
